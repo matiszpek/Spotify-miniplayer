@@ -7,15 +7,9 @@ si := Buffer(24, 0)
 NumPut("UInt", 1, si)
 DllCall("gdiplus\GdiplusStartup", "UPtr*", &gdipToken:=0, "Ptr", si, "Ptr", 0)
 
-; Leer credenciales desde config.ini (no subir ese archivo a GitHub)
-CONFIG_FILE   := A_ScriptDir "\config.ini"
-if !FileExist(CONFIG_FILE) {
-    MsgBox("No se encontró config.ini.`nCopiá config.example.ini como config.ini y completá tus datos.", "Spotify Miniplayer", "Icon!")
-    ExitApp()
-}
-CLIENT_ID     := IniRead(CONFIG_FILE, "Spotify", "ClientID")
-CLIENT_SECRET := IniRead(CONFIG_FILE, "Spotify", "ClientSecret")
-REDIRECT_URI  := IniRead(CONFIG_FILE, "Spotify", "RedirectURI")
+CLIENT_ID     := "cbe863fc68c04c49bfda61e897ac21be"
+CLIENT_SECRET := "1d7e399c686548379607fd03490fbf98"
+REDIRECT_URI  := "http://127.0.0.1:8888/callback"
 TOKEN_FILE    := A_ScriptDir "\spotify_token.ini"
 
 ^!Right:: SendInput("{Media_Next}")
@@ -89,13 +83,18 @@ GetCurrentTrack(token) {
     whr.Open("GET", "https://api.spotify.com/v1/me/player/currently-playing", false)
     whr.SetRequestHeader("Authorization", "Bearer " token)
     whr.Send()
+    if (whr.Status = 204)
+        return {cancion: "", artista: "", imgUrl: "", playing: false}
     if (whr.Status != 200)
-        return {cancion: "", artista: "", imgUrl: ""}
+        return {cancion: "", artista: "", imgUrl: "", playing: false}
     json := whr.ResponseText
+    isPlaying := InStr(json, '"is_playing" : true') || InStr(json, '"is_playing":true')
+    if !isPlaying
+        return {cancion: "", artista: "", imgUrl: "", playing: false}
     cancion := RegExMatch(json, '"item"\s*:\s*\{[^}]*?"name"\s*:\s*"((?:[^"\\]|\\.)*)"', &m) ? m[1] : ""
     artista := RegExMatch(json, '"artists"\s*:\s*\[\s*\{[^}]*?"name"\s*:\s*"((?:[^"\\]|\\.)*)"', &m) ? m[1] : ""
     imgUrl  := RegExMatch(json, '"images"\s*:\s*\[[^\]]*?"url"\s*:\s*"(https://i\.scdn\.co/image/[^"]+)"', &m) ? m[1] : ""
-    return {cancion: cancion, artista: artista, imgUrl: imgUrl}
+    return {cancion: cancion, artista: artista, imgUrl: imgUrl, playing: true}
 }
 
 DownloadImage(url, path) {
@@ -164,12 +163,16 @@ MostrarOverlay() {
     imgPath := ""
 
     if (token != "") {
-        track   := GetCurrentTrack(token)
-        cancion := track.cancion
-        artista := track.artista
-        if (track.imgUrl != "") {
-            imgPath := A_Temp "\spotify_cover.jpg"
-            DownloadImage(track.imgUrl, imgPath)
+        track := GetCurrentTrack(token)
+        if (!track.playing) {
+            cancion := "No se está reproduciendo nada"
+        } else {
+            cancion := track.cancion
+            artista := track.artista
+            if (track.imgUrl != "") {
+                imgPath := A_Temp "\spotify_cover.jpg"
+                DownloadImage(track.imgUrl, imgPath)
+            }
         }
     }
 
