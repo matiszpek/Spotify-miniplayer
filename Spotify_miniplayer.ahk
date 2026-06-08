@@ -8,7 +8,7 @@ NumPut("UInt", 1, si)
 DllCall("gdiplus\GdiplusStartup", "UPtr*", &gdipToken:=0, "Ptr", si, "Ptr", 0)
 
 CLIENT_ID     := "cbe863fc68c04c49bfda61e897ac21be"
-CLIENT_SECRET := "1d7e399c686548379607fd03490fbf98"
+CLIENT_SECRET := ""
 REDIRECT_URI  := "http://127.0.0.1:8888/callback"
 TOKEN_FILE    := A_ScriptDir "\spotify_token.ini"
 
