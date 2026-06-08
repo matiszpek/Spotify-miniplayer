@@ -12,8 +12,18 @@ CLIENT_SECRET := "1d7e399c686548379607fd03490fbf98"
 REDIRECT_URI  := "http://127.0.0.1:8888/callback"
 TOKEN_FILE    := A_ScriptDir "\spotify_token.ini"
 
-^!Right:: SendInput("{Media_Next}")
-^!Left::  SendInput("{Media_Prev}")
+^!Right:: {
+    SendInput("{Media_Next}")
+    Sleep(300)
+    if IsObject(overlayGui) && WinExist("ahk_id " overlayGui.Hwnd)
+        MostrarOverlay()
+}
+^!Left:: {
+    SendInput("{Media_Prev}")
+    Sleep(300)
+    if IsObject(overlayGui) && WinExist("ahk_id " overlayGui.Hwnd)
+        MostrarOverlay()
+}
 ^!Space:: SendInput("{Media_Play_Pause}")
 ^\::  MostrarOverlay()
 !\::  MostrarOverlay()
@@ -166,6 +176,9 @@ MostrarOverlay() {
         track := GetCurrentTrack(token)
         if (!track.playing) {
             cancion := "No se está reproduciendo nada"
+            artista := ""
+            imgPath := ""
+            try FileDelete(A_Temp "\spotify_cover.jpg")
         } else {
             cancion := track.cancion
             artista := track.artista
